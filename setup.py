@@ -27,7 +27,8 @@ setup(name='indian_pines_cnn_classification',
           'scikit-image',
           'tensorflow',
           'keras',
-          'h5py'
+          'h5py',
+          'spectral'
 
           # TODO: Add additional packages required by both
           # producer and consumer side installations
