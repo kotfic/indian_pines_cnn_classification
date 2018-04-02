@@ -8,6 +8,7 @@ from keras.utils import np_utils
 from sklearn.metrics import classification_report, confusion_matrix
 import itertools
 import spectral
+import matplotlib.pyplot as plt
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
@@ -51,8 +52,8 @@ def Patch(data,height_index,width_index, PATCH_SIZE=5):
     return patch
 
 
-def loadIndianPinesData():
-    data_path = os.path.join(os.getcwd(),'data')
+def loadIndianPinesData(data_path='data'):
+    data_path = os.path.join(os.getcwd(), data_path)
     data = sio.loadmat(
         os.path.join(data_path, 'Indian_pines_corrected.mat'))['indian_pines_corrected']
 
@@ -60,13 +61,13 @@ def loadIndianPinesData():
 
     return data, labels
 
-def loadTestData(windowSize=5, numPCAcomponents=30, testRatio=0.25):
-    X_test = np.load(
-        "GITHUB/XtestWindowSize"
-        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) + ".npy")
-    y_test = np.load(
-        "GITHUB/ytestWindowSize"
-        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) + ".npy")
+def loadTestData(data_path='GITHUB', windowSize=5, numPCAcomponents=30, testRatio=0.25):
+    X_test = np.load(os.path.join(
+        data_path, "XtestWindowSize"
+        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) + ".npy"))
+    y_test = np.load(os.path.join(
+        data_path, "ytestWindowSize"
+        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) + ".npy"))
 
     return X_test, y_test
 
@@ -88,9 +89,8 @@ def writeReport(Test_loss, Test_accuracy, classifciation, confusion, windowSize=
         x_file.write('{}'.format(confusion))
 
 
-@girder_job(title="Validate Model")
-@app.task
-def validate(model, X_test, y_test):
+
+def validateModel(model, X_test, y_test):
     X_test  = np.reshape(X_test, (X_test.shape[0], X_test.shape[3], X_test.shape[1], X_test.shape[2]))
     y_test = np_utils.to_categorical(y_test)
 
@@ -100,9 +100,20 @@ def validate(model, X_test, y_test):
 
     return Test_loss, Test_accuracy, classification, confusion
 
-@girder_job(title="Classify Data")
+
+@girder_job(title="Validate Model")
 @app.task
-def classify(model, X, y, PATCH_SIZE = 5, numComponents = 30):
+def validate(model_path='my_model.h5', test_data_path='GITHUB',  windowSize=5, numPCAcomponents=30, testRatio=0.25):
+    model = loadModel(path=model_path)
+    X_test, y_test = loadTestData(data_path=test_data_path,
+                                   windowSize=windowSize,
+                                  numPCAcomponents=numPCAcomponents,
+                                  testRatio=testRatio
+    )
+
+    return validateModel(model, X_test, y_test)
+
+def classifyModel(model, X, y, PATCH_SIZE = 5, numComponents = 30):
     X, pca = applyPCA(X,numComponents=numComponents)
 
     height = y.shape[0]
@@ -126,3 +137,18 @@ def classify(model, X, y, PATCH_SIZE = 5, numComponents = 30):
                 outputs[int(i+PATCH_SIZE/2)][int(j+PATCH_SIZE/2)] = prediction+1
 
     return outputs
+
+@girder_job(title="Classify Data")
+@app.task
+def classify(model_path='my_model.h5', data_path='data',
+             ground_path='ground_truth.jpg', classification_path='classification.jpg',
+             patch_size=5, numComponents=30):
+    model = loadModel(path=model_path)
+    X, y = loadIndianPinesData(data_path=data_path)
+
+    outputs = classifyModel(model, X, y, PATCH_SIZE=patch_size, numComponents=numComponents)
+
+    spectral.save_rgb(ground_path, y, colors=spectral.spy_colors)
+    spectral.save_rgb(classification_path, outputs.astype(int), colors=spectral.spy_colors)
+
+    return ground_path, classification_path
