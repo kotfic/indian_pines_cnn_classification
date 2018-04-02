@@ -13,24 +13,26 @@ from girder_worker.app import app
 from girder_worker.utils import girder_job
 
 
-def loadTrainingDataset(windowSize = 5, numPCAcomponents = 30, testRatio = 0.25):
-    X_train = np.load(
-        "GITHUB/XtrainWindowSize"
-        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio)  + ".npy")
+def loadTrainingDataset(data_path=None, windowSize = 5, numPCAcomponents = 30, testRatio = 0.25):
+    if data_path is None:
+        data_path = "GITHUB"
 
-    y_train = np.load(
-        "GITHUB/ytrainWindowSize"
-        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) + ".npy")
+    X_train = np.load(os.path.join(
+        data_path, "XtrainWindowSize"
+        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio)  + ".npy"))
+
+    y_train = np.load(os.path.join(
+        data_path,  "ytrainWindowSize"
+        + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) + ".npy"))
 
     return X_train, y_train
 
 
 
 def saveModel(model, path = 'my_model.h5'):
-    model.save('my_model.h5')
+    model.save(path)
+    return path
 
-@girder_job(title="Train CNN")
-@app.task
 def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.25):
     # Reshape into (numberofsumples, channels, height, width)
     X_train = np.reshape(X_train, (X_train.shape[0],
@@ -66,3 +68,16 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
     model.fit(X_train, y_train, batch_size=32, epochs=15)
 
     return model
+
+@girder_job(title="Train CNN")
+@app.task
+def train_model(data_path='GITHUB', model_path='my_model.h5', windowSize=5, numPCAcomponents=30, testRatio=0.25):
+
+    X_train, y_train = loadTrainingDataset(data_path=data_path)
+
+    model = trainModel(X_train, y_train,
+                       windowSize=windowSize,
+                       numPCAcomponents=numPCAcomponents,
+                       testRatio=testRatio)
+
+    return saveModel(model, path=model_path)
