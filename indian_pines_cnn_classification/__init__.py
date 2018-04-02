@@ -18,4 +18,5 @@ class IndianPinesCNNClassifciation(GirderWorkerPluginABC):
         # Return a list of python importable paths to the
         # plugin's path directory
         return ['indian_pines_cnn_classification.create',
-                'indian_pines_cnn_classification.train']
+                'indian_pines_cnn_classification.train',
+                'indian_pines_cnn_classification.validate']
