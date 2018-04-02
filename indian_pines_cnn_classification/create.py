@@ -107,8 +107,10 @@ def AugmentData(X_train):
 
 
 
-def loadIndianPinesData():
-    data_path = os.path.join(os.getcwd(),'data')
+def loadIndianPinesData(data_path=None):
+    if data_path is None:
+        data_path = os.path.join(os.getcwd(),'data')
+
     data = sio.loadmat(os.path.join(data_path, 'Indian_pines_corrected.mat'))['indian_pines_corrected']
     labels = sio.loadmat(os.path.join(data_path, 'Indian_pines_gt.mat'))['indian_pines_gt']
 
@@ -116,47 +118,50 @@ def loadIndianPinesData():
 
 
 
-def savePreprocessedData(X_trainPatches, X_testPatches, y_trainPatches, y_testPatches, windowSize, wasPCAapplied = False, numPCAComponents = 0, testRatio = 0.25):
+def savePreprocessedData(X_trainPatches, X_testPatches, y_trainPatches, y_testPatches, windowSize, data_path=None, wasPCAapplied = False, numPCAComponents = 0, testRatio = 0.25):
 
     if wasPCAapplied:
+        if data_path is None:
+            data_path = 'GITHUB'
         try:
-            os.mkdir('GITHUB')
+            os.mkdir(data_path)
         except FileExistsError as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
-        with open("GITHUB/XtrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy", 'bw') as outfile:
+        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
             np.save(outfile, X_trainPatches)
-        with open("GITHUB/XtestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy", 'bw') as outfile:
+
+        with open(os.path.join( data_path, "XtestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
             np.save(outfile, X_testPatches)
-        with open("GITHUB/ytrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy", 'bw') as outfile:
+        with open(os.path.join( data_path, "ytrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
             np.save(outfile, y_trainPatches)
-        with open("GITHUB/ytestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy", 'bw') as outfile:
+        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
             np.save(outfile, y_testPatches)
     else:
+        if data_path is None:
+            data_path = 'preprocessData'
+
         try:
-            os.mkdir('preprocessedData')
+            os.mkdir(data_path)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
-        with open("preprocessedData/XtrainWindowSize" + str(windowSize) + ".npy", 'bw') as outfile:
+        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
             np.save(outfile, X_trainPatches)
-        with open("preprocessedData/XtestWindowSize" + str(windowSize) + ".npy", 'bw') as outfile:
+        with open(os.path.join(data_path, "XtestWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
             np.save(outfile, X_testPatches)
-        with open("preprocessedData/ytrainWindowSize" + str(windowSize) + ".npy", 'bw') as outfile:
+        with open(os.path.join(data_path, "ytrainWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
             np.save(outfile, y_trainPatches)
-        with open("preprocessedData/ytestWindowSize" + str(windowSize) + ".npy", 'bw') as outfile:
+        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
             np.save(outfile, y_testPatches)
 
+    return data_path
 
 
 
-# TODO: Fill in the function with the correct argument signature
-# and code that performs the task.
-@girder_job(title='Preprocess Data')
-@app.task(bind=True)
-def preprocessData(self, data, labels, numComponents=30, windowSize=5, testRatio=0.25):
+def preprocessData(data, labels, numComponents=30, windowSize=5, testRatio=0.25):
     X, y = data, labels
     X, pca = applyPCA(X,numComponents=numComponents)
     XPatches, yPatches = createPatches(X, y, windowSize=windowSize)
@@ -169,3 +174,21 @@ def preprocessData(self, data, labels, numComponents=30, windowSize=5, testRatio
              "wasPCAapplied": True,
              "numPCAComponents": numComponents,
              "testRatio": testRatio})
+
+
+
+# TODO: Fill in the function with the correct argument signature
+# and code that performs the task.
+@girder_job(title='Preprocess Data')
+@app.task(bind=True)
+def preprocess_data(self, data_path=None, output_path=None, numComponents=30, windowSize=5, testRatio=0.25):
+    data, labels = loadIndianPinesData(data_path=data_path)
+
+    X_train, X_test, y_train, y_test, opts = preprocessData(
+        data, labels,
+        numComponents=numComponents,
+        windowSize=windowSize,
+        testRatio=testRatio
+    )
+
+    return savePreprocessedData(X_train, X_test, y_train, y_test, data_path=output_path, **opts)
