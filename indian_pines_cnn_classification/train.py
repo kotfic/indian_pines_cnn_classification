@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import numpy as np
 import scipy
 import os
@@ -11,6 +14,8 @@ from keras.utils import np_utils
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
+from girder_worker_utils.decorators import task, task_input, task_output
+from girder_worker_utils import types
 
 
 def loadTrainingDataset(data_path=None, windowSize = 5, numPCAcomponents = 30, testRatio = 0.25):
@@ -69,15 +74,27 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
 
     return model
 
+
+@task()
+@task_input('--data-path', type=types.String(), default='GITHUB', help='Path to the input data')
+@task_input('--model-path', type=types.String(), default='my_model.h5', help='Path the model')
+@task_input('--num-components', type=types.Integer(min=1), default=30, help='The number of components')
+@task_input('--window-size', type=types.Integer(min=1), default=5, help='The window size')
+@task_input('--test-ratio', type=types.Float(), default=0.25, help='The test ratio')
+@task_output('path', type=types.String(), help='The path where output data is created')
 @girder_job(title="Train CNN")
 @app.task
-def train_model(data_path='GITHUB', model_path='my_model.h5', windowSize=5, numPCAcomponents=30, testRatio=0.25):
-
+def train_model(data_path='GITHUB', model_path='my_model.h5', window_size=5, num_components=30, test_ratio=0.25):
+    """Train the model"""
     X_train, y_train = loadTrainingDataset(data_path=data_path)
 
     model = trainModel(X_train, y_train,
-                       windowSize=windowSize,
-                       numPCAcomponents=numPCAcomponents,
-                       testRatio=testRatio)
+                       windowSize=window_size,
+                       numPCAcomponents=num_components,
+                       testRatio=test_ratio)
 
     return saveModel(model, path=model_path)
+
+
+if __name__ == '__main__':
+    train_model.main()

@@ -12,6 +12,8 @@ import scipy.ndimage
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
+from girder_worker_utils.decorators import task, task_input, task_output
+from girder_worker_utils import types
 
 
 def splitTrainTestSet(X, y, testRatio=0.10):
@@ -125,18 +127,18 @@ def savePreprocessedData(X_trainPatches, X_testPatches, y_trainPatches, y_testPa
             data_path = 'GITHUB'
         try:
             os.mkdir(data_path)
-        except FileExistsError as exc:
+        except Exception as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
-        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'wb') as outfile:
             np.save(outfile, X_trainPatches)
 
-        with open(os.path.join( data_path, "XtestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join( data_path, "XtestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'wb') as outfile:
             np.save(outfile, X_testPatches)
-        with open(os.path.join( data_path, "ytrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join( data_path, "ytrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'wb') as outfile:
             np.save(outfile, y_trainPatches)
-        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'wb') as outfile:
             np.save(outfile, y_testPatches)
     else:
         if data_path is None:
@@ -148,13 +150,13 @@ def savePreprocessedData(X_trainPatches, X_testPatches, y_trainPatches, y_testPa
             if exc.errno != errno.EEXIST:
                 raise
 
-        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + ".npy"), 'wb') as outfile:
             np.save(outfile, X_trainPatches)
-        with open(os.path.join(data_path, "XtestWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "XtestWindowSize" + str(windowSize) + ".npy"), 'wb') as outfile:
             np.save(outfile, X_testPatches)
-        with open(os.path.join(data_path, "ytrainWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "ytrainWindowSize" + str(windowSize) + ".npy"), 'wb') as outfile:
             np.save(outfile, y_trainPatches)
-        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + ".npy"), 'wb') as outfile:
             np.save(outfile, y_testPatches)
 
     return data_path
@@ -179,16 +181,28 @@ def preprocessData(data, labels, numComponents=30, windowSize=5, testRatio=0.25)
 
 # TODO: Fill in the function with the correct argument signature
 # and code that performs the task.
+@task()
+@task_input('--data-path', type=types.Folder(), required=True, help='Path to input data')
+@task_input('--output-path', type=types.Folder(), help='Path to save output data')
+@task_input('--num-components', type=types.Integer(min=1), default=30, help='The number of components')
+@task_input('--window-size', type=types.Integer(min=1), default=5, help='The window size')
+@task_input('--test-ratio', type=types.Float(), default=0.25, help='The test ratio')
+@task_output('path', type=types.Folder(), help='The path where output data is created')
 @girder_job(title='Preprocess Data')
 @app.task(bind=True)
-def preprocess_data(self, data_path=None, output_path=None, numComponents=30, windowSize=5, testRatio=0.25):
+def preprocess_data(self, data_path=None, output_path=None, num_components=30, window_size=5, test_ratio=0.25):
+    """Preprocess data..."""
     data, labels = loadIndianPinesData(data_path=data_path)
 
     X_train, X_test, y_train, y_test, opts = preprocessData(
         data, labels,
-        numComponents=numComponents,
-        windowSize=windowSize,
-        testRatio=testRatio
+        numComponents=num_components,
+        windowSize=window_size,
+        testRatio=test_ratio
     )
 
     return savePreprocessedData(X_train, X_test, y_train, y_test, data_path=output_path, **opts)
+
+
+if __name__ == '__main__':
+    preprocess_data.main()

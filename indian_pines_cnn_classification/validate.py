@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 # Import the necessary libraries
 from sklearn.decomposition import PCA
 import os
@@ -12,6 +15,8 @@ import matplotlib.pyplot as plt
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
+from girder_worker_utils.decorators import task, task_input, task_output
+from girder_worker_utils import types
 
 
 def reports(model, X_test, y_test):
@@ -75,8 +80,8 @@ def loadModel(path='my_model.h5'):
     return load_model(path)
 
 
-def writeReport(Test_loss, Test_accuracy, classifciation, confusion, windowSize=5, numPCAcomponetns=30, testRatio=0.25):
-    file_name = 'report' + "WindowSize" + str(windowSize) + "PCA" + str(numComponents) + "testRatio" + str(testRatio) +".txt"
+def writeReport(Test_loss, Test_accuracy, classification, confusion, windowSize=5, numPCAcomponents=30, testRatio=0.25):
+    file_name = 'report' + "WindowSize" + str(windowSize) + "PCA" + str(numPCAcomponents) + "testRatio" + str(testRatio) +".txt"
 
     with open(file_name, 'w') as x_file:
         x_file.write('{} Test loss (%)'.format(Test_loss))
@@ -138,17 +143,29 @@ def classifyModel(model, X, y, PATCH_SIZE = 5, numComponents = 30):
 
     return outputs
 
+@task()
+@task_input('--model-path', type=types.String(), required=True, default='my_model.h5', help='Path to the model file')
+@task_input('--data-path', type=types.String(), default='data', help='Path to the input data')
+@task_input('--ground-path', type=types.String(), default='ground_truth.jpg', help='Where to save the ground truth')
+@task_input('--classification-path', type=types.String(), default='classification.jpg', help='Where to save the classification')
+@task_input('--patch_size', type=types.Integer(min=1), default=5, help='The patch size')
+@task_input('--num-components', type=types.Integer(min=1), default=30, help='The number of components')
 @girder_job(title="Classify Data")
 @app.task
 def classify(model_path='my_model.h5', data_path='data',
              ground_path='ground_truth.jpg', classification_path='classification.jpg',
-             patch_size=5, numComponents=30):
+             patch_size=5, num_components=30):
+    """Run classify"""
     model = loadModel(path=model_path)
     X, y = loadIndianPinesData(data_path=data_path)
 
-    outputs = classifyModel(model, X, y, PATCH_SIZE=patch_size, numComponents=numComponents)
+    outputs = classifyModel(model, X, y, PATCH_SIZE=patch_size, numComponents=num_components)
 
     spectral.save_rgb(ground_path, y, colors=spectral.spy_colors)
     spectral.save_rgb(classification_path, outputs.astype(int), colors=spectral.spy_colors)
 
     return ground_path, classification_path
+
+
+if __name__ == '__main__':
+    classify.main()
