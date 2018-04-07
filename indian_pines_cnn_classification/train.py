@@ -1,5 +1,4 @@
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
+from . import _quiet_import
 
 import numpy as np
 import scipy
