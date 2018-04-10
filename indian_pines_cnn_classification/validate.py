@@ -1,6 +1,7 @@
 from . import _quiet_import
 
 # Import the necessary libraries
+import click
 from sklearn.decomposition import PCA
 import os
 import scipy.io as sio
@@ -143,12 +144,14 @@ def classifyModel(model, X, y, PATCH_SIZE = 5, numComponents = 30):
     return outputs
 
 @task()
-@task_input('--model-path', type=types.String(), required=True, default='my_model.h5', help='Path to the model file')
-@task_input('--data-path', type=types.String(), default='data', help='Path to the input data')
-@task_input('--ground-path', type=types.String(), default='ground_truth.jpg', help='Where to save the ground truth')
-@task_input('--classification-path', type=types.String(), default='classification.jpg', help='Where to save the classification')
+@task_input('--model-path', type=types.File(), required=True, help='Path to the model file')
+@task_input('--data-path', type=types.Folder(), required=True, help='Path to the input data')
+@click.option('--ground-path', type=click.STRING, help='Where to save the ground truth')
+@click.option('--classification-path', type=click.STRING, help='Where to save the classification')
 @task_input('--patch_size', type=types.Integer(min=1), default=5, help='The patch size')
 @task_input('--num-components', type=types.Integer(min=1), default=30, help='The number of components')
+@task_output('ground', type=types.File(), help='The path where the ground truth is created')
+@task_output('classification', type=types.File(), help='The path where the classification is created')
 @girder_job(title="Classify Data")
 @app.task
 def classify(model_path='my_model.h5', data_path='data',

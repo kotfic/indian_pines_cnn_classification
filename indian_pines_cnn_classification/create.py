@@ -1,3 +1,4 @@
+import click
 import errno
 import numpy as np
 from sklearn.decomposition import PCA
@@ -183,7 +184,8 @@ def preprocessData(data, labels, numComponents=30, windowSize=5, testRatio=0.25)
 # and code that performs the task.
 @task()
 @task_input('--data-path', type=types.Folder(), required=True, help='Path to input data')
-@task_input('--output-path', type=types.Folder(), help='Path to save output data')
+# This option isn't shown in the web UI... (we could make this a kwarg to @task_input)
+@click.option('--output-path', type=click.STRING, help='Path to save output data')
 @task_input('--num-components', type=types.Integer(min=1), default=30, help='The number of components')
 @task_input('--window-size', type=types.Integer(min=1), default=5, help='The window size')
 @task_input('--test-ratio', type=types.Float(), default=0.25, help='The test ratio')

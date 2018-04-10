@@ -1,5 +1,6 @@
 from . import _quiet_import
 
+import click
 import numpy as np
 import scipy
 import os
@@ -75,12 +76,12 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
 
 
 @task()
-@task_input('--data-path', type=types.String(), default='GITHUB', help='Path to the input data')
-@task_input('--model-path', type=types.String(), default='my_model.h5', help='Path the model')
+@task_input('--data-path', type=types.Folder(), default='GITHUB', help='Path to the input data')
+@click.option('--model-path', type=click.STRING, default='my_model.h5', help='Where to save the model')
 @task_input('--num-components', type=types.Integer(min=1), default=30, help='The number of components')
 @task_input('--window-size', type=types.Integer(min=1), default=5, help='The window size')
 @task_input('--test-ratio', type=types.Float(), default=0.25, help='The test ratio')
-@task_output('path', type=types.String(), help='The path where output data is created')
+@task_output('path', type=types.File(), help='The path where the model is saved')
 @girder_job(title="Train CNN")
 @app.task
 def train_model(data_path='GITHUB', model_path='my_model.h5', window_size=5, num_components=30, test_ratio=0.25):
