@@ -11,7 +11,6 @@ from keras.utils import np_utils
 from sklearn.metrics import classification_report, confusion_matrix
 import itertools
 import spectral
-import matplotlib.pyplot as plt
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
