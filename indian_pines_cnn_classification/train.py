@@ -50,7 +50,6 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
 
     # Define the input shape
     input_shape= X_train[0].shape
-    print(input_shape)
 
     # number of filters
     C1 = 3*numPCAcomponents
