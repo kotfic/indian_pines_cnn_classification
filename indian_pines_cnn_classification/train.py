@@ -82,7 +82,7 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
 @task_input('--test-ratio', type=types.Float(), default=0.25, help='The test ratio')
 @task_output('path', type=types.File(), help='The path where the model is saved')
 @girder_job(title="Train CNN")
-@app.task
+@app.task(queue='demo')
 def train_model(data_path='GITHUB', model_path='my_model.h5', window_size=5, num_components=30, test_ratio=0.25):
     """Train the model"""
     X_train, y_train = loadTrainingDataset(data_path=data_path)

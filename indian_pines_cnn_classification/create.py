@@ -191,8 +191,8 @@ def preprocessData(data, labels, numComponents=30, windowSize=5, testRatio=0.25)
 @task_input('--test-ratio', type=types.Float(), default=0.25, help='The test ratio')
 @task_output('path', type=types.Folder(), help='The path where output data is created')
 @girder_job(title='Preprocess Data')
-@app.task(bind=True)
-def preprocess_data(self, data_path=None, output_path=None, num_components=30, window_size=5, test_ratio=0.25):
+@app.task(queue='demo')
+def preprocess_data(data_path=None, output_path=None, num_components=30, window_size=5, test_ratio=0.25):
     """Preprocess data..."""
     data, labels = loadIndianPinesData(data_path=data_path)
 

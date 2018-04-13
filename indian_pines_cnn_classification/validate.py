@@ -152,7 +152,7 @@ def classifyModel(model, X, y, PATCH_SIZE = 5, numComponents = 30):
 @task_output('ground', type=types.File(), help='The path where the ground truth is created')
 @task_output('classification', type=types.File(), help='The path where the classification is created')
 @girder_job(title="Classify Data")
-@app.task
+@app.task(queue='demo')
 def classify(model_path='my_model.h5', data_path='data',
              ground_path='ground_truth.jpg', classification_path='classification.jpg',
              patch_size=5, num_components=30):
