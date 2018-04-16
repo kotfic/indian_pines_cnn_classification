@@ -4,13 +4,6 @@ import click
 import numpy as np
 import scipy
 import os
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
-from keras.layers import Conv2D, MaxPooling2D
-from keras.optimizers import SGD
-from keras import backend as K
-K.set_image_dim_ordering('th')
-from keras.utils import np_utils
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
@@ -39,6 +32,16 @@ def saveModel(model, path = 'my_model.h5'):
     return path
 
 def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.25):
+
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout, Flatten
+    from keras.layers import Conv2D, MaxPooling2D
+    from keras.optimizers import SGD
+    from keras import backend as K
+    K.set_image_dim_ordering('th')
+    from keras.utils import np_utils
+
+
     # Reshape into (numberofsumples, channels, height, width)
     X_train = np.reshape(X_train, (X_train.shape[0],
                                    X_train.shape[3],
@@ -73,6 +76,20 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
 
     return model
 
+from billiard import Pool
+
+def _train_model(data_path='GITHUB', model_path='my_model.h5', window_size=5, num_components=30, test_ratio=0.25):
+    """Train the model"""
+    X_train, y_train = loadTrainingDataset(data_path=data_path)
+
+    model = trainModel(
+        X_train, y_train,
+        windowSize=window_size,
+        numPCAcomponents=num_components,
+        testRatio=test_ratio)
+
+    return saveModel(model, path=model_path)
+
 
 @task()
 @task_input('--data-path', type=types.Folder(), default='GITHUB', help='Path to the input data')
@@ -84,15 +101,13 @@ def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.
 @girder_job(title="Train CNN")
 @app.task(queue='demo')
 def train_model(data_path='GITHUB', model_path='my_model.h5', window_size=5, num_components=30, test_ratio=0.25):
-    """Train the model"""
-    X_train, y_train = loadTrainingDataset(data_path=data_path)
-
-    model = trainModel(X_train, y_train,
-                       windowSize=window_size,
-                       numPCAcomponents=num_components,
-                       testRatio=test_ratio)
-
-    return saveModel(model, path=model_path)
+    with Pool(1) as p:
+        return p.apply(_train_model, (), dict(
+            data_path=data_path,
+            model_path=model_path,
+            window_size=window_size,
+            num_components=num_components,
+            test_ratio=test_ratio))
 
 
 if __name__ == '__main__':

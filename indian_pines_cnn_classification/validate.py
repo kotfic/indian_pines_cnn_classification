@@ -6,8 +6,6 @@ from sklearn.decomposition import PCA
 import os
 import scipy.io as sio
 import numpy as np
-from keras.models import load_model
-from keras.utils import np_utils
 from sklearn.metrics import classification_report, confusion_matrix
 import itertools
 import spectral
@@ -76,6 +74,7 @@ def loadTestData(data_path='GITHUB', windowSize=5, numPCAcomponents=30, testRati
     return X_test, y_test
 
 def loadModel(path='my_model.h5'):
+    from keras.models import load_model
     return load_model(path)
 
 
@@ -95,6 +94,7 @@ def writeReport(Test_loss, Test_accuracy, classification, confusion, windowSize=
 
 
 def validateModel(model, X_test, y_test):
+    from keras.utils import np_utils
     X_test  = np.reshape(X_test, (X_test.shape[0], X_test.shape[3], X_test.shape[1], X_test.shape[2]))
     y_test = np_utils.to_categorical(y_test)
 
@@ -142,6 +142,25 @@ def classifyModel(model, X, y, PATCH_SIZE = 5, numComponents = 30):
 
     return outputs
 
+from billiard import Pool
+
+def _classify(model_path='my_model.h5', data_path='data',
+             ground_path='ground_truth.jpg', classification_path='classification.jpg',
+             patch_size=5, num_components=30):
+    """Run classify"""
+
+    model = loadModel(path=model_path)
+
+    X, y = loadIndianPinesData(data_path=data_path)
+
+    outputs = classifyModel(model, X, y, PATCH_SIZE=patch_size, numComponents=num_components)
+
+    spectral.save_rgb(ground_path, y, colors=spectral.spy_colors)
+    spectral.save_rgb(classification_path, outputs.astype(int), colors=spectral.spy_colors)
+
+    return ground_path, classification_path
+
+
 @task()
 @task_input('--model-path', type=types.File(), required=True, help='Path to the model file')
 @task_input('--data-path', type=types.Folder(), required=True, help='Path to the input data')
@@ -157,16 +176,15 @@ def classify(model_path='my_model.h5', data_path='data',
              ground_path='ground_truth.jpg', classification_path='classification.jpg',
              patch_size=5, num_components=30):
     """Run classify"""
-    model = loadModel(path=model_path)
-    X, y = loadIndianPinesData(data_path=data_path)
 
-    outputs = classifyModel(model, X, y, PATCH_SIZE=patch_size, numComponents=num_components)
-
-    spectral.save_rgb(ground_path, y, colors=spectral.spy_colors)
-    spectral.save_rgb(classification_path, outputs.astype(int), colors=spectral.spy_colors)
-
-    return ground_path, classification_path
-
+    with Pool(1) as p:
+        return p.apply(_classify, (), dict(
+            model_path=model_path,
+            data_path=data_path,
+            ground_path=ground_path,
+            classification_path=classification_path,
+            patch_size=patch_size,
+            num_components=num_components))
 
 if __name__ == '__main__':
     classify.main()
