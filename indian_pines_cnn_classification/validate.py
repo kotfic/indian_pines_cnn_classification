@@ -3,8 +3,6 @@ from sklearn.decomposition import PCA
 import os
 import scipy.io as sio
 import numpy as np
-from keras.models import load_model
-from keras.utils import np_utils
 from sklearn.metrics import classification_report, confusion_matrix
 import itertools
 import spectral
@@ -71,6 +69,27 @@ def loadTestData(data_path='GITHUB', windowSize=5, numPCAcomponents=30, testRati
     return X_test, y_test
 
 def loadModel(path='my_model.h5'):
+    from keras.models import load_model
+    
+    ## extra imports to set GPU options
+    import tensorflow as tf
+    from keras import backend as K
+     
+    ###################################
+    # TensorFlow wizardry
+    config = tf.ConfigProto()
+     
+    # Don't pre-allocate memory; allocate as-needed
+    config.gpu_options.allow_growth = True
+     
+    # Only allow a total of half the GPU memory to be allocated
+    config.gpu_options.per_process_gpu_memory_fraction = 0.1
+     
+    # Create a session with the above options specified.
+    K.tensorflow_backend.set_session(tf.Session(config=config))
+    ###################################
+
+    
     return load_model(path)
 
 
@@ -90,6 +109,8 @@ def writeReport(Test_loss, Test_accuracy, classifciation, confusion, windowSize=
 
 
 def validateModel(model, X_test, y_test):
+    from keras.utils import np_utils
+    
     X_test  = np.reshape(X_test, (X_test.shape[0], X_test.shape[3], X_test.shape[1], X_test.shape[2]))
     y_test = np_utils.to_categorical(y_test)
 

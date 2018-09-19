@@ -125,18 +125,18 @@ def savePreprocessedData(X_trainPatches, X_testPatches, y_trainPatches, y_testPa
             data_path = 'GITHUB'
         try:
             os.mkdir(data_path)
-        except FileExistsError as exc:
+        except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
-        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'w') as outfile:
             np.save(outfile, X_trainPatches)
 
-        with open(os.path.join( data_path, "XtestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join( data_path, "XtestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'w') as outfile:
             np.save(outfile, X_testPatches)
-        with open(os.path.join( data_path, "ytrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join( data_path, "ytrainWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'w') as outfile:
             np.save(outfile, y_trainPatches)
-        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + "PCA" + str(numPCAComponents) + "testRatio" + str(testRatio) + ".npy"), 'w') as outfile:
             np.save(outfile, y_testPatches)
     else:
         if data_path is None:
@@ -148,13 +148,13 @@ def savePreprocessedData(X_trainPatches, X_testPatches, y_trainPatches, y_testPa
             if exc.errno != errno.EEXIST:
                 raise
 
-        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "XtrainWindowSize" + str(windowSize) + ".npy"), 'w') as outfile:
             np.save(outfile, X_trainPatches)
-        with open(os.path.join(data_path, "XtestWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "XtestWindowSize" + str(windowSize) + ".npy"), 'w') as outfile:
             np.save(outfile, X_testPatches)
-        with open(os.path.join(data_path, "ytrainWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "ytrainWindowSize" + str(windowSize) + ".npy"), 'w') as outfile:
             np.save(outfile, y_trainPatches)
-        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + ".npy"), 'bw') as outfile:
+        with open(os.path.join(data_path, "ytestWindowSize" + str(windowSize) + ".npy"), 'w') as outfile:
             np.save(outfile, y_testPatches)
 
     return data_path

@@ -25,7 +25,7 @@ setup(name='indian_pines_cnn_classification',
           'scipy',
           'scikit-learn',
           'scikit-image',
-          'tensorflow',
+          'tensorflow-gpu',
           'keras',
           'h5py',
           'spectral'

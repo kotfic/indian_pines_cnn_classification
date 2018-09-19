@@ -1,13 +1,6 @@
 import numpy as np
 import scipy
 import os
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
-from keras.layers import Conv2D, MaxPooling2D
-from keras.optimizers import SGD
-from keras import backend as K
-K.set_image_dim_ordering('th')
-from keras.utils import np_utils
 
 from girder_worker.app import app
 from girder_worker.utils import girder_job
@@ -34,6 +27,33 @@ def saveModel(model, path = 'my_model.h5'):
     return path
 
 def trainModel(X_train, y_train, windowSize=5, numPCAcomponents=30, testRatio=0.25):
+
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout, Flatten
+    from keras.layers import Conv2D, MaxPooling2D
+    from keras.optimizers import SGD
+    from keras import backend as K
+    K.set_image_dim_ordering('th')
+    from keras.utils import np_utils
+    
+    ## extra imports to set GPU options
+    import tensorflow as tf
+     
+    ###################################
+    # TensorFlow wizardry
+    config = tf.ConfigProto()
+     
+    # Don't pre-allocate memory; allocate as-needed
+    config.gpu_options.allow_growth = True
+     
+    # Only allow a total of half the GPU memory to be allocated
+    config.gpu_options.per_process_gpu_memory_fraction = 0.1
+     
+    # Create a session with the above options specified.
+    K.tensorflow_backend.set_session(tf.Session(config=config))
+    ###################################
+    
+    
     # Reshape into (numberofsumples, channels, height, width)
     X_train = np.reshape(X_train, (X_train.shape[0],
                                    X_train.shape[3],
