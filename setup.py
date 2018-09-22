@@ -21,11 +21,11 @@ setup(name='indian_pines_cnn_classification',
       install_requires=[
           'girder_worker',
           'girder_worker_utils',
+          'tensorflow-gpu',
           'numpy',
           'scipy',
           'scikit-learn',
           'scikit-image',
-          'tensorflow-gpu',
           'keras',
           'h5py',
           'spectral'
@@ -45,6 +45,9 @@ setup(name='indian_pines_cnn_classification',
       },
       include_package_data=True,
       entry_points={
+          'console_scripts': [
+              'gwrun = indian_pines_cnn_classification.cli:main'
+          ],
           'girder_worker_plugins': [
               'indian_pines_cnn_classification = indian_pines_cnn_classification:IndianPinesCNNClassifciation',
           ]
