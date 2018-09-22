@@ -1,0 +1,6 @@
+{
+    "name": "Indian Pines Classification",
+    "description": "Run land classification with CNN based on Indian Pines dataset",
+    "version": "0.0.0",
+    "dependencies": []
+}
